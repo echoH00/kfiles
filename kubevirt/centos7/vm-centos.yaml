@@ -1,0 +1,71 @@
+#apiVersion: v1
+#kind: PersistentVolume
+#metadata:
+#  name: centos7-os
+#spec:
+#  volumeMode: Filesystem
+#  persistentVolumeReclaimPolicy: Delete
+#  capacity:
+#    storage: 100Gi
+#  accessModes:
+#  - ReadWriteOnce
+#  hostPath:
+#    path: /image-data/centos7-os
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: centos7
+spec:
+  running: false
+  template:
+    metadata:
+      labels:
+        kubevirt.io/domain: centos7
+    spec:
+      domain:
+        cpu:
+          cores: 1
+        devices:
+          disks:
+          - bootOrder: 2
+            cdrom:
+              bus: sata
+            name: cdromiso
+          - bootOrder: 1
+            disk:
+              bus: virtio
+            name: harddrive
+          - cdrom:
+              bus: sata
+            name: virtiocontainerdisk
+          interfaces:
+          - masquerade: {}
+            model: e1000
+            name: default
+        machine:
+          type: q35
+        resources:
+          requests:
+            memory: 2G
+      networks:
+      - name: default
+        pod: {}
+      volumes:
+      - name: cdromiso
+        persistentVolumeClaim:
+          claimName: pvc-centos7-iso
+      - name: datadrive
+        hostDisk:
+          capacity: 50Gi
+          path: /image-data/centos7-data.img
+          type: DiskOrCreate
+      - name: harddrive
+        hostDisk:
+          capacity: 30Gi
+          path: /image-data/disk.img
+          type: DiskOrCreate
+      - containerDisk:
+          image: kubevirt/virtio-container-disk
+        name: virtiocontainerdisk
+
