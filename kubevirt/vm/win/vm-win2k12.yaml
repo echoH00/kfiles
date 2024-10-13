@@ -14,17 +14,19 @@ spec:
           cores: 2
         devices:
           disks:
-          - bootOrder: 2
+          # Note: after installed os, change bootOrder
+          - bootOrder: 1
             cdrom:
               bus: sata
             name: cdromiso
-          - bootOrder: 1
+          - bootOrder: 2
             disk:
               bus: virtio
             name: harddrive
           - cdrom:
               bus: sata
             name: virtiocontainerdisk
+        # https://kubevirt.io/2022/KubeVirt-installing_Microsoft_Windows_11_from_an_iso.html#:~:text=When%20customizing%20this,key%20each%20boot.
         firmware:
           bootloader:
             efi:
