@@ -68,8 +68,8 @@ EOF
 
 if [ $proxy_flag == 'on' ]; then
   #set_proxy_for_apt
-  export http_proxy='http://192.168.88.248:7890'
-  export https_proxy='http://192.168.88.248:7890'
+  export http_proxy="${http_proxy}"
+  export https_proxy="${http_proxy}"
 
 fi
 
@@ -79,8 +79,8 @@ function set_proxy_for_containerd() {
   sudo mkdir -p /etc/systemd/system/containerd.service.d/
   cat <<EOF | sudo tee /etc/systemd/system/containerd.service.d/proxy.conf
 [Service]
-Environment="HTTP_PROXY=http://192.168.88.248:7890/"
-Environment="HTTPS_PROXY=http://192.168.88.248:7890/"
+Environment="HTTP_PROXY=${http_proxy}"
+Environment="HTTPS_PROXY="${http_proxy}"
 Environment="NO_PROXY=localhost,127.0.0.1,10.239.0.0/16,10.244.0.0/16,10.96.0.0/16,10.0.0/24"
 EOF
   sudo systemctl daemon-reload
