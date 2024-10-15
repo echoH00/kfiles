@@ -10,7 +10,7 @@ k8s_version='1.28.1' # 1.26.3 / 1.28.0
 k8s_minor_version=$(echo $k8s_version | cut -d '.' -f 1-2)
 pod_cidr='10.244.0.0/16'
 service_cidr='10.96.0.0/16'
-api_server_ip='your apiserver ip'
+api_server_ip='Change: your apiserver ip'
 
 while getopts ":a:f:v:m:h" options; do
   case "$options" in
@@ -259,3 +259,5 @@ if [ $init_for_master == "true" ]; then
   kube_init_master
   echo "WARNING: Suggest use -f option to set proxy for apt & docker"
 fi
+
+# Todo: setup chrony & install flannel & move taint on master
