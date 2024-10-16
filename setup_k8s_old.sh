@@ -2,7 +2,7 @@
 
 set -x
 #---------------------------- Parse Argument -----------------------------------
-http_proxy='Change: Your Proxy'
+http_proxy='Change: IP+Port'
 proxy_flag='on'
 init_for_master="true"
 
@@ -10,7 +10,7 @@ k8s_version='1.28.1' # 1.26.3 / 1.28.0
 k8s_minor_version=$(echo $k8s_version | cut -d '.' -f 1-2)
 pod_cidr='10.244.0.0/16'
 service_cidr='10.96.0.0/16'
-api_server_ip='Change: your apiserver ip'
+api_server_ip='Change: IP'
 
 while getopts ":a:f:v:m:h" options; do
   case "$options" in
@@ -55,7 +55,18 @@ fi
 
 #-------------------- Set Swapoff ----------------------------------------
 sudo swapoff -a
-sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+sudo sed -i '/swap/s@^@#@' /etc/fstab
+
+#-------------------- set timezone & chrony  ---------------------------------
+function set_datetime() {
+  sudo timedatectl set-timezone Asia/Shanghai
+  sudo apt-get install chrony -y
+  sudo sed -i '/^pool/s@^@#@g' /etc/chrony/chrony.conf
+  sudo echo -e "pool ntp.aliyun.com iburst\npool time1.cloud.tencent.com iburst" >>/etc/chrony/chrony.conf
+  sudo systemctl restart chronyd
+  sudo systemctl enable chrony 
+  sudo chronyc -a makestep
+}
 
 #-------------------- Set proxy for APT ----------------------------------------
 function set_proxy_for_apt() {
@@ -68,8 +79,8 @@ EOF
 
 if [ $proxy_flag == 'on' ]; then
   #set_proxy_for_apt
-  export http_proxy="${http_proxy}"
-  export https_proxy="${http_proxy}"
+  export http_proxy=${http_proxy}
+  export https_proxy=${http_proxy}
 
 fi
 
@@ -80,7 +91,7 @@ function set_proxy_for_containerd() {
   cat <<EOF | sudo tee /etc/systemd/system/containerd.service.d/proxy.conf
 [Service]
 Environment="HTTP_PROXY=${http_proxy}"
-Environment="HTTPS_PROXY="${http_proxy}"
+Environment="HTTPS_PROXY=${http_proxy}"
 Environment="NO_PROXY=localhost,127.0.0.1,10.239.0.0/16,10.244.0.0/16,10.96.0.0/16,10.0.0/24"
 EOF
   sudo systemctl daemon-reload
@@ -252,12 +263,13 @@ EOF
 export DEBIAN_FRONTEND=noninteractive
 
 # ---------------- Prepare the Network -----------------------------------------
+set_datetime
 iptables_conf
 containerd_install
 kube_install
 if [ $init_for_master == "true" ]; then
   kube_init_master
+  kubectl taint nodes --all node-role.kubernetes.io/control-plane-
   echo "WARNING: Suggest use -f option to set proxy for apt & docker"
+  echo "Next: install fleet-board, Please see https://fleetboard-io.github.io/fleetboard-charts/"
 fi
-
-# Todo: setup chrony & install flannel & move taint on master
